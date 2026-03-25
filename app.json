@@ -25,6 +25,15 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-secure-store"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "4b7869d7-ad90-4d35-a2c2-f51eab778e19"
+      }
+    },
+    "owner": "jessecinnamonfir"
   }
 }
