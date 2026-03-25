@@ -12,7 +12,7 @@ import { fetchClient } from "../api/client";
 
 export const UserDetailScreen = ({ route, navigation }: any) => {
   const { userId } = route.params || {};
-  const { currentUser } = useStore();
+  const { currentUser, logout } = useStore();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isConnectionAccepted, setIsConnectionAccepted] = useState(false);
@@ -66,8 +66,20 @@ export const UserDetailScreen = ({ route, navigation }: any) => {
   if (!user) {
     return (
       <View style={styles.centered}>
-        <Text>User not found</Text>
-        <AppButton title="Go Back" onPress={() => navigation.goBack()} style={{ marginTop: 20 }} />
+        <Text style={{ fontSize: 18, color: COLORS.text, marginBottom: 10 }}>User not found</Text>
+        <Text style={{ color: COLORS.textLight, marginBottom: 20 }}>This profile may have been removed.</Text>
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          <AppButton 
+            title="Go Back" 
+            onPress={() => navigation.goBack()} 
+            variant="secondary"
+          />
+          <AppButton 
+            title="Logout" 
+            onPress={() => logout()} 
+            variant="outline"
+          />
+        </View>
       </View>
     );
   }

@@ -15,19 +15,23 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+app.use(
+  cors({
+    origin: "*", // allow all for mobile
+  }),
+);
 app.use(express.json());
 
 // Rate Limiting
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 mins
   max: 20, // max 20 login/register requests per IP
-  message: "Too many requests from this IP, please try again later"
+  message: "Too many requests from this IP, please try again later",
 });
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100
+  max: 100,
 });
 
 // Routes
@@ -39,10 +43,17 @@ app.use("/sessions", apiLimiter, sessionsRoutes);
 app.use("/leaderboard", apiLimiter, leaderboardRoutes);
 
 // General Error Handler
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error(err.stack);
-  res.status(500).json({ error: "Something broke!" });
-});
+app.use(
+  (
+    err: any,
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction,
+  ) => {
+    console.error(err.stack);
+    res.status(500).json({ error: "Something broke!" });
+  },
+);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
