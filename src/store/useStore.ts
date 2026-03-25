@@ -61,7 +61,8 @@ interface AppState {
   users: User[];
   requests: Request[];
   sessions: Session[];
-  
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
   // Async Actions
   authenticate: (user: User) => void;
   logout: () => void;
@@ -87,8 +88,13 @@ export const useStore = create<AppState>((set, get) => ({
   users: [],
   requests: [],
   sessions: [],
+  activeTab: 'Activity',
+  setActiveTab: (tab) => set({ activeTab: tab }),
 
-  authenticate: (user) => set({ currentUser: user, isAuthenticated: true }),
+  authenticate: (user) => set((state) => ({ 
+    currentUser: { ...state.currentUser, ...user }, 
+    isAuthenticated: true 
+  })),
   logout: async () => {
     await clearToken();
     set({ currentUser: null, isAuthenticated: false });
@@ -108,11 +114,14 @@ export const useStore = create<AppState>((set, get) => ({
 
   fetchCurrentUser: async () => {
     try {
+      // If we already have a reasonably complete profile, don't block
+      const current = get().currentUser;
       const data = await fetchClient("/users/me");
-      set({ currentUser: data, isAuthenticated: true });
+      
+      // Merge with current to preserve any locally updated fields if necessary
+      set({ currentUser: { ...current, ...data }, isAuthenticated: true });
     } catch (error) {
       console.error("Error fetching current user", error);
-      // If user is not found after seed, clear the session
       if ((error as Error).message.includes("User not found")) {
         await get().logout();
       }

@@ -3,6 +3,7 @@ import { db } from "../db";
 import { users, userSkills, skills } from "../db/schema";
 import { eq, ne } from "drizzle-orm";
 import { protect, AuthRequest } from "../middlewares/auth";
+import { getFullProfile } from "../utils/user";
 
 const router = Router();
 
@@ -33,33 +34,13 @@ router.get("/me", protect, async (req: AuthRequest, res) => {
       res.status(401).json({ error: "Unauthorized" });
       return;
     }
-    const [user] = await db.select().from(users).where(eq(users.id, userId));
-    if (!user) {
+    const fullUser = await getFullProfile(userId);
+    if (!fullUser) {
       res.status(404).json({ error: "User not found" });
       return;
     }
-    const allUserSkills = await db.select({
-      id: userSkills.id,
-      skillId: userSkills.skillId,
-      name: skills.name,
-      type: userSkills.type
-    }).from(userSkills)
-      .innerJoin(skills, eq(userSkills.skillId, skills.id))
-      .where(eq(userSkills.userId, userId));
-    
-    const skillsTeach = allUserSkills.filter(s => s.type === 'teach').map(s => s.name);
-    const skillsLearn = allUserSkills.filter(s => s.type === 'learn').map(s => s.name);
 
-    res.json({
-      ...user,
-      skills: allUserSkills,
-      skillsTeach,
-      skillsLearn,
-      achievements: [],
-      avatar: user.avatar,
-      engagementScore: user.totalScore || 0,
-      weeklyGain: 0,
-    });
+    res.json(fullUser);
   } catch (error) {
     res.status(500).json({ error: "Server error fetching profile" });
   }

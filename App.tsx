@@ -56,8 +56,8 @@ async function registerForPushNotificationsAsync() {
 
 export default function App() {
   const { updatePushToken, fetchRequests, isAuthenticated } = useStore();
-  const notificationListener = useRef<Notifications.Subscription>();
-  const responseListener = useRef<Notifications.Subscription>();
+  const notificationListener = useRef<Notifications.Subscription>(undefined);
+  const responseListener = useRef<Notifications.Subscription>(undefined);
 
   useEffect(() => {
     if (isAuthenticated) {

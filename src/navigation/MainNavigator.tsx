@@ -1,8 +1,16 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { Home, Compass, Trophy, User } from "lucide-react-native";
+import { 
+  standardTransition, 
+  modalTransition, 
+  bottomSheetTransition, 
+  scaleFadeTransition,
+  tabTransition
+} from "../constants/transitions";
+import { Home, Compass, Trophy, User as UserIcon } from "lucide-react-native";
 import { COLORS } from "../constants/theme";
+import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
+import { createBlankStackNavigator } from "react-native-screen-transitions/blank-stack";
 
 // Screens (Placeholder imports - will be created next)
 import { HomeScreen } from "../screens/HomeScreen";
@@ -17,58 +25,56 @@ import { useStore } from "../store/useStore";
 import { EditProfileScreen } from "../screens/EditProfileScreen";
 import { UserDetailScreen } from "../screens/UserDetailScreen";
 
-const Tab = createBottomTabNavigator();
-const Stack = createNativeStackNavigator();
+const TabStack = createBlankStackNavigator();
+const Stack = createBlankStackNavigator();
+
+const CustomTabBar = ({ navigation, focusedIndex }: any) => {
+  if (focusedIndex === undefined) return null;
+
+  const tabs = [
+    { name: 'Activity', icon: Home },
+    { name: 'Discover', icon: Compass },
+    { name: 'Ranking', icon: Trophy },
+    { name: 'Profile', icon: UserIcon },
+  ];
+
+  return (
+    <View style={styles.tabBar}>
+      {tabs.map((tab, index) => {
+        const isFocused = focusedIndex === index;
+        const Icon = tab.icon;
+
+        return (
+          <TouchableOpacity
+            key={tab.name}
+            onPress={() => navigation.navigate(tab.name)}
+            style={styles.tabItem}
+          >
+            <Icon color={isFocused ? COLORS.primary : COLORS.textLight} size={24} />
+            <Text style={[styles.tabLabel, { color: isFocused ? COLORS.primary : COLORS.textLight }]}>
+              {tab.name}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+};
 
 const TabNavigator = () => {
   return (
-    <Tab.Navigator
+    <TabStack.Navigator
       screenOptions={{
-        tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.textLight,
-        headerShown: false,
-        tabBarStyle: {
-          borderTopWidth: 1,
-          borderTopColor: COLORS.border,
-          height: 60,
-          paddingBottom: 10,
-        },
-        tabBarLabelStyle: {
-          fontWeight: "bold",
-        },
+        ...tabTransition,
+        overlay: (props) => <CustomTabBar {...props} />,
+        overlayShown: true,
       }}
     >
-      <Tab.Screen
-        name='Activity'
-        component={HomeScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => <Home color={color} size={size} />,
-        }}
-      />
-      <Tab.Screen
-        name='Discover'
-        component={DiscoverScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Compass color={color} size={size} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name='Ranking'
-        component={LeaderboardScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => <Trophy color={color} size={size} />,
-        }}
-      />
-      <Tab.Screen
-        name='Profile'
-        component={ProfileScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => <User color={color} size={size} />,
-        }}
-      />
-    </Tab.Navigator>
+      <TabStack.Screen name='Activity' component={HomeScreen} />
+      <TabStack.Screen name='Discover' component={DiscoverScreen} />
+      <TabStack.Screen name='Ranking' component={LeaderboardScreen} />
+      <TabStack.Screen name='Profile' component={ProfileScreen} />
+    </TabStack.Navigator>
   );
 };
 
@@ -80,11 +86,15 @@ export const MainNavigator = () => {
   }, []);
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator 
+      screenOptions={{ 
+        ...standardTransition,
+      }}
+    >
       {!isAuthenticated ? (
         <>
           <Stack.Screen name='Welcome' component={WelcomeScreen} />
-          <Stack.Screen name='Auth' component={AuthScreen} />
+          <Stack.Screen name='Auth' component={AuthScreen} options={modalTransition} />
         </>
       ) : (
         <>
@@ -92,13 +102,51 @@ export const MainNavigator = () => {
           <Stack.Screen
             name='Request'
             component={RequestScreen}
-            options={{ presentation: "modal" }}
+            options={modalTransition}
           />
-          <Stack.Screen name='Confirmation' component={ConfirmationScreen} />
-          <Stack.Screen name='EditProfile' component={EditProfileScreen} options={{ presentation: 'modal' }} />
-          <Stack.Screen name='UserDetail' component={UserDetailScreen} options={{ presentation: 'modal' }} />
+          <Stack.Screen 
+            name='Confirmation' 
+            component={ConfirmationScreen} 
+            options={scaleFadeTransition}
+          />
+          <Stack.Screen 
+            name='EditProfile' 
+            component={EditProfileScreen} 
+            options={bottomSheetTransition} 
+          />
+          <Stack.Screen 
+            name='UserDetail' 
+            component={UserDetailScreen} 
+            options={bottomSheetTransition} 
+          />
         </>
       )}
     </Stack.Navigator>
   );
 };
+const styles = StyleSheet.create({
+  tabBar: {
+    flexDirection: 'row',
+    height: 70,
+    backgroundColor: COLORS.white,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    paddingBottom: 20,
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    // Position at bottom of screen
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  tabItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabLabel: {
+    fontSize: 12,
+    marginTop: 4,
+    fontWeight: 'bold',
+  },
+});

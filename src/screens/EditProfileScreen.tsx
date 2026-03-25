@@ -7,6 +7,7 @@ import { useStore } from "../store/useStore";
 import { fetchClient } from "../api/client";
 import * as ImagePicker from "expo-image-picker";
 import { Camera, User as UserIcon } from "lucide-react-native";
+import Transition from "react-native-screen-transitions";
 
 export const EditProfileScreen = ({ navigation }: any) => {
   const { currentUser, checkAuth } = useStore();
@@ -85,55 +86,79 @@ export const EditProfileScreen = ({ navigation }: any) => {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.container}>
-      <AppHeader title='Edit Profile' showBack onBack={() => navigation.goBack()} />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        
-        <View style={styles.imagePickerSection}>
-          <TouchableOpacity onPress={pickImage} style={styles.avatarWrapper}>
-            {avatar ? (
-              <Image source={{ uri: avatar }} style={styles.avatarImage} />
-            ) : (
-              <View style={styles.placeholderAvatar}>
-                <UserIcon size={40} color={COLORS.textLight} />
-              </View>
-            )}
-            <View style={styles.cameraIcon}>
-              <Camera size={16} color={COLORS.white} />
-            </View>
-          </TouchableOpacity>
-          <Text style={styles.changeText}>Tap to change picture</Text>
+      <View style={styles.sheetContainer}>
+        <View style={styles.sheetHeader}>
+          <View style={styles.sheetIndicator} />
         </View>
+        <Transition.ScrollView contentContainerStyle={styles.scrollContent}>
+          
+          <View style={styles.imagePickerSection}>
+            <TouchableOpacity onPress={pickImage} style={styles.avatarWrapper}>
+              {avatar ? (
+                <Image source={{ uri: avatar }} style={styles.avatarImage} />
+              ) : (
+                <View style={[styles.avatarWrapper, styles.placeholderAvatar]}>
+                  <UserIcon size={40} color={COLORS.textLight} />
+                </View>
+              )}
+              <View style={styles.cameraIcon}>
+                <Camera size={16} color={COLORS.white} />
+              </View>
+            </TouchableOpacity>
+            <Text style={styles.changeText}>Tap to change picture</Text>
+          </View>
 
-        <TextInput style={styles.input} placeholder='Name' value={form.name} onChangeText={(t) => setForm({ ...form, name: t })} />
-        <TextInput style={styles.input} placeholder='Phone' value={form.phone} onChangeText={(t) => setForm({ ...form, phone: t })} />
-        <TextInput style={styles.input} placeholder='Department' value={form.department} onChangeText={(t) => setForm({ ...form, department: t })} />
-        <TextInput style={styles.input} placeholder='Faculty' value={form.faculty} onChangeText={(t) => setForm({ ...form, faculty: t })} />
-        <TextInput style={styles.input} placeholder='Year' value={form.year} keyboardType="numeric" onChangeText={(t) => setForm({ ...form, year: t })} />
+          <TextInput style={styles.input} placeholder='Name' value={form.name} onChangeText={(t) => setForm({ ...form, name: t })} />
+          <TextInput style={styles.input} placeholder='Phone' value={form.phone} onChangeText={(t) => setForm({ ...form, phone: t })} />
+          <TextInput style={styles.input} placeholder='Department' value={form.department} onChangeText={(t) => setForm({ ...form, department: t })} />
+          <TextInput style={styles.input} placeholder='Faculty' value={form.faculty} onChangeText={(t) => setForm({ ...form, faculty: t })} />
+          <TextInput style={styles.input} placeholder='Year' value={form.year} keyboardType="numeric" onChangeText={(t) => setForm({ ...form, year: t })} />
 
-        <TextInput 
-          style={styles.textArea} 
-          placeholder='Skills to Teach (comma separated)' 
-          multiline 
-          value={skillsTeachInput} 
-          onChangeText={setSkillsTeachInput} 
-        />
-        <TextInput 
-          style={styles.textArea} 
-          placeholder='Skills to Learn (comma separated)' 
-          multiline 
-          value={skillsLearnInput} 
-          onChangeText={setSkillsLearnInput} 
-        />
+          <TextInput 
+            style={styles.textArea} 
+            placeholder='Skills to Teach (comma separated)' 
+            multiline 
+            value={skillsTeachInput} 
+            onChangeText={setSkillsTeachInput} 
+          />
+          <TextInput 
+            style={styles.textArea} 
+            placeholder='Skills to Learn (comma separated)' 
+            multiline 
+            value={skillsLearnInput} 
+            onChangeText={setSkillsLearnInput} 
+          />
 
-        <AppButton title={loading ? "Saving..." : "Save Changes"} onPress={handleSave} style={{ marginTop: SPACING.lg }} />
-      </ScrollView>
+          <AppButton title={loading ? "Saving..." : "Save Changes"} onPress={handleSave} style={{ marginTop: SPACING.lg }} />
+          <View style={{ height: 40 }} />
+        </Transition.ScrollView>
+      </View>
     </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.white },
-  scrollContent: { padding: SPACING.md, gap: SPACING.sm },
+  container: { flex: 1, backgroundColor: "transparent" },
+  sheetContainer: { 
+    flex: 1, 
+    backgroundColor: COLORS.white, 
+    borderTopLeftRadius: BORDER_RADIUS.xl, 
+    borderTopRightRadius: BORDER_RADIUS.xl,
+    marginTop: 20,
+    overflow: "hidden",
+  },
+  sheetHeader: {
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sheetIndicator: {
+    width: 40,
+    height: 5,
+    backgroundColor: COLORS.border,
+    borderRadius: 3,
+  },
+  scrollContent: { padding: SPACING.md, gap: SPACING.sm, paddingBottom: 100 },
   imagePickerSection: {
     alignItems: "center",
     marginBottom: SPACING.lg,
@@ -155,9 +180,6 @@ const styles = StyleSheet.create({
     borderRadius: 50,
   },
   placeholderAvatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: COLORS.lightGray,

@@ -37,7 +37,12 @@ export const WelcomeScreen = ({ navigation }: any) => {
           />
           <Text style={styles.loginText}>
             Already have an account?{" "}
-            <Text style={styles.loginLink} onPress={() => navigation.navigate("Auth", { isLogin: true })}>Log In</Text>
+            <Text
+              style={styles.loginLink}
+              onPress={() => navigation.navigate("Auth", { isLogin: true })}
+            >
+              Log In
+            </Text>
           </Text>
         </View>
       </View>
@@ -57,8 +62,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   imageContainer: {
-    width: width * 0.8,
-    height: width * 0.8,
+    width: width * 0.9,
+    height: width * 0.9,
     borderRadius: SPACING.lg,
     overflow: "hidden",
     marginTop: SPACING.xl,

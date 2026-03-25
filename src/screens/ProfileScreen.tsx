@@ -150,6 +150,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: SPACING.md,
+    paddingBottom: 100,
   },
   profileHeader: {
     alignItems: "center",

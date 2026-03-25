@@ -9,6 +9,7 @@ import { COLORS, SPACING, BORDER_RADIUS } from "../constants/theme";
 import { useStore, User } from "../store/useStore";
 import { Trophy, Award, MapPin, MessageCircle, Mail, Phone, ArrowLeft, User as UserIcon } from "lucide-react-native";
 import { fetchClient } from "../api/client";
+import Transition from "react-native-screen-transitions";
 
 export const UserDetailScreen = ({ route, navigation }: any) => {
   const { userId } = route.params || {};
@@ -89,107 +90,97 @@ export const UserDetailScreen = ({ route, navigation }: any) => {
 
   return (
     <View style={styles.container}>
-      <AppHeader 
-        title={`${user.name.split(' ')[0]}'s Profile`} 
-        showBack 
-        onBack={() => navigation.goBack()} 
-      />
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.profileHeader}>
-          {user.avatar ? (
-            <Image source={{ uri: user.avatar }} style={styles.largeAvatar} />
-          ) : (
-            <View style={[styles.largeAvatar, styles.placeholderAvatar]}>
-              <UserIcon size={60} color={COLORS.textLight} />
-            </View>
-          )}
-          <Text style={styles.name}>{user.name}</Text>
-          <View style={styles.locationRow}>
-            <MapPin size={16} color={COLORS.primary} />
-            <Text style={styles.locationText}>{user.department} Hub</Text>
-          </View>
-          <View style={styles.badgeContainer}>
-            <AppBadge label={`Level ${Math.floor(engagementScore / 100)}`} variant='orange' />
-          </View>
-
-          {isConnectionAccepted && (
-            <View style={styles.contactInfo}>
-              <View style={styles.contactItem}>
-                <Mail size={14} color={COLORS.textLight} />
-                <Text style={styles.contactText}>{user.email}</Text>
-              </View>
-              <View style={styles.contactItem}>
-                <Phone size={14} color={COLORS.textLight} />
-                <Text style={styles.contactText}>{user.phone}</Text>
-              </View>
-            </View>
-          )}
+      <View style={styles.sheetContainer}>
+        <View style={styles.sheetHeader}>
+          <View style={styles.sheetIndicator} />
         </View>
-
-        <View style={styles.statsGrid}>
-          <AppCard style={styles.statCard}>
-            <Award color={COLORS.primary} size={24} />
-            <AnimatedCounter value={engagementScore} style={styles.statValue} />
-            <Text style={styles.statLabel}>Engagement</Text>
-          </AppCard>
-          <AppCard style={styles.statCard}>
-            <Trophy color={COLORS.secondary} size={24} />
-            <Text style={styles.statValue}>{Object.keys(user.skillsTeach || {}).length}</Text>
-            <Text style={styles.statLabel}>Skills Shared</Text>
-          </AppCard>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Skills to Teach 🎓</Text>
-          <View style={styles.tagCloud}>
-            {user.skillsTeach && user.skillsTeach.length > 0 ? (
-              user.skillsTeach.map((skill: string, idx: number) => (
-                <View key={idx} style={styles.tag}>
-                  <AppBadge label={skill} variant='success' />
-                </View>
-              ))
+        <Transition.ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <View style={styles.profileHeader}>
+            {user.avatar ? (
+              <Image source={{ uri: user.avatar }} style={styles.largeAvatar} />
             ) : (
-              <Text style={styles.emptyText}>No teaching skills listed.</Text>
+              <View style={[styles.largeAvatar, styles.placeholderAvatar]}>
+                <UserIcon size={60} color={COLORS.textLight} />
+              </View>
             )}
+            <Text style={styles.name}>{user.name}</Text>
+            <View style={styles.locationRow}>
+              <MapPin size={16} color={COLORS.primary} />
+              <Text style={styles.locationText}>{user.department} Hub</Text>
+            </View>
           </View>
-        </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Skills to Learn 🎯</Text>
-          <View style={styles.tagCloud}>
-            {user.skillsLearn && user.skillsLearn.length > 0 ? (
-              user.skillsLearn.map((skill: string, idx: number) => (
-                <View key={idx} style={styles.tag}>
-                  <AppBadge label={skill} variant='secondary' />
-                </View>
-              ))
-            ) : (
-              <Text style={styles.emptyText}>No learning goals listed.</Text>
-            )}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Skills to Teach 🎓</Text>
+            <View style={styles.tagCloud}>
+              {user.skillsTeach && user.skillsTeach.length > 0 ? (
+                user.skillsTeach.map((skill: string, idx: number) => (
+                  <View key={idx} style={styles.tag}>
+                    <AppBadge label={skill} variant='success' />
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.emptyText}>No teaching skills listed.</Text>
+              )}
+            </View>
           </View>
-        </View>
 
-        <AppButton
-          title='Request to Learn'
-          onPress={() => {
-            const firstSkillId = user.skills && user.skills.length > 0 ? user.skills[0].skillId : 1;
-            navigation.navigate("Request", { userId: user.id, userName: user.name, skillId: firstSkillId });
-          }}
-          style={styles.connectButton}
-          icon={<MessageCircle color={COLORS.white} size={20} style={{ marginRight: 8 }} />}
-        />
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Skills to Learn 🎯</Text>
+            <View style={styles.tagCloud}>
+              {user.skillsLearn && user.skillsLearn.length > 0 ? (
+                user.skillsLearn.map((skill: string, idx: number) => (
+                  <View key={idx} style={styles.tag}>
+                    <AppBadge label={skill} variant='secondary' />
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.emptyText}>No learning goals listed.</Text>
+              )}
+            </View>
+          </View>
 
-        <View style={{ height: 40 }} />
-      </ScrollView>
+          <AppButton
+            title='Request to Learn'
+            onPress={() => {
+              const firstSkillId = user.skills && user.skills.length > 0 ? user.skills[0].skillId : 1;
+              navigation.navigate("Request", { userId: user.id, userName: user.name, skillId: firstSkillId });
+            }}
+            style={styles.connectButton}
+            icon={<MessageCircle color={COLORS.white} size={20} style={{ marginRight: 8 }} />}
+          />
+
+          <View style={{ height: 40 }} />
+        </Transition.ScrollView>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.white },
+  container: { flex: 1, backgroundColor: "transparent" },
+  sheetContainer: { 
+    flex: 1, 
+    backgroundColor: COLORS.white, 
+    borderTopLeftRadius: BORDER_RADIUS.xl, 
+    borderTopRightRadius: BORDER_RADIUS.xl,
+    marginTop: 20,
+    overflow: "hidden",
+  },
+  sheetHeader: {
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sheetIndicator: {
+    width: 40,
+    height: 5,
+    backgroundColor: COLORS.border,
+    borderRadius: 3,
+  },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   loadingText: { marginTop: 10, color: COLORS.textLight },
-  scrollContent: { padding: SPACING.md },
+  scrollContent: { padding: SPACING.md, paddingBottom: 100 },
   profileHeader: { alignItems: "center", marginBottom: SPACING.xl, marginTop: SPACING.md },
   largeAvatar: { width: 120, height: 120, borderRadius: 60, borderWidth: 4, borderColor: COLORS.primary },
   name: { fontSize: 24, fontWeight: "bold", color: COLORS.text, marginTop: SPACING.md },

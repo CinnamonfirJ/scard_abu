@@ -333,6 +333,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: SPACING.md,
+    paddingBottom: 100, // Account for absolute TabBar
   },
   headerRow: {
     flexDirection: "row",

@@ -370,6 +370,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: SPACING.md,
+    paddingBottom: 100,
   },
   userCard: {
     padding: SPACING.md,

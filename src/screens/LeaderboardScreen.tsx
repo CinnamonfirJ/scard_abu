@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
     color: COLORS.white,
   },
   scrollContent: {
-    paddingBottom: SPACING.xl,
+    paddingBottom: 100,
   },
   podium: {
     flexDirection: "row",

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { db } from "../db";
 import { users } from "../db/schema";
 import { eq } from "drizzle-orm";
+import { getFullProfile } from "../utils/user";
 
 const router = Router();
 
@@ -54,7 +55,9 @@ router.post("/register", async (req, res) => {
       { expiresIn: "30d" }
     );
 
-    res.status(201).json({ token, user: { id: newUser.id, name: newUser.name, email: newUser.email } });
+    const fullUser = await getFullProfile(newUser.id);
+
+    res.status(201).json({ token, user: fullUser });
   } catch (error) {
     if (error instanceof z.ZodError) {
        res.status(400).json({ error: error.issues });
@@ -89,7 +92,9 @@ router.post("/login", async (req, res) => {
       { expiresIn: "30d" }
     );
 
-    res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
+    const fullUser = await getFullProfile(user.id);
+
+    res.json({ token, user: fullUser });
   } catch (error) {
     if (error instanceof z.ZodError) {
        res.status(400).json({ error: error.issues });
