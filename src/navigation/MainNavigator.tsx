@@ -11,6 +11,7 @@ import { Home, Compass, Trophy, User as UserIcon } from "lucide-react-native";
 import { COLORS } from "../constants/theme";
 import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
 import { createBlankStackNavigator } from "react-native-screen-transitions/blank-stack";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // Screens (Placeholder imports - will be created next)
 import { HomeScreen } from "../screens/HomeScreen";
@@ -29,8 +30,9 @@ const Tab = createBottomTabNavigator();
 const Stack = createBlankStackNavigator();
 
 const CustomTabBar = ({ state, descriptors, navigation }: any) => {
+  const insets = useSafeAreaInsets();
   return (
-    <View style={styles.tabBar}>
+    <View style={[styles.tabBar, { paddingBottom: Math.max(insets.bottom, 16) }]}>
       {state.routes.map((route: any, index: number) => {
         const { options } = descriptors[route.key];
         const isFocused = state.index === index;
@@ -148,11 +150,10 @@ export const MainNavigator = () => {
 const styles = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
-    height: 70,
     backgroundColor: COLORS.white,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
-    paddingBottom: 20,
+    paddingTop: 12,
     justifyContent: 'space-around',
     alignItems: 'center',
     // Position at bottom of screen
