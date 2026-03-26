@@ -83,8 +83,16 @@ router.post("/login", async (req, res) => {
        return;
     }
     
-    // Update lastLogin
-    await db.update(users).set({ lastLogin: new Date() }).where(eq(users.id, user.id));
+    // Update lastLogin and reset dailyScore if new day
+    const lastLoginDate = user.lastLogin ? new Date(user.lastLogin).toDateString() : null;
+    const today = new Date().toDateString();
+    
+    const updates: any = { lastLogin: new Date() };
+    if (lastLoginDate !== today) {
+      updates.dailyScore = 0;
+    }
+
+    await db.update(users).set(updates).where(eq(users.id, user.id));
 
     const token = jwt.sign(
       { userId: user.id, email: user.email },

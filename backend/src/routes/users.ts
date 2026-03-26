@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { db } from "../db";
-import { users, userSkills, skills } from "../db/schema";
-import { eq, ne } from "drizzle-orm";
+import { users, userSkills, skills, activities } from "../db/schema";
+import { eq, ne, desc } from "drizzle-orm";
 import { protect, AuthRequest } from "../middlewares/auth";
 import { getFullProfile } from "../utils/user";
+import { recordActivity } from "../services/activityService";
 
 const router = Router();
 
@@ -46,15 +47,26 @@ router.get("/me", protect, async (req: AuthRequest, res) => {
   }
 });
 
-// GET my activities (mocking simple recent sessions for now)
+// GET my activities 
 router.get("/me/activities", protect, async (req: AuthRequest, res) => {
   try {
-    // Generate some dynamic mock activities based on user ID since we don't have a rigid activity table
-    // For production, we would union requests and sessions
-    res.json([
-      { id: 1, text: "You completed a session successfully!", time: "2 hours ago", avatar: null },
-      { id: 2, text: "Your request to learn React was accepted.", time: "1 day ago", avatar: null }
-    ]);
+    const userId = req.user!.userId;
+    const userActivities = await db.select().from(activities)
+      .where(eq(activities.userId, userId))
+      .orderBy(desc(activities.createdAt))
+      .limit(10);
+    
+    // Map for UI compatibility if needed (e.g., adding user avatar)
+    const formatted = userActivities.map(a => ({
+      id: a.id,
+      text: a.description,
+      type: a.type,
+      xpGained: a.xpGained,
+      time: a.createdAt,
+      avatar: null // Could fetch user avatar here if needed for others feed
+    }));
+    
+    res.json(formatted);
   } catch (error) {
     res.status(500).json({ error: "Server error fetching activities" });
   }
@@ -189,6 +201,13 @@ router.post("/me/sync-skills", protect, async (req: AuthRequest, res) => {
         });
       }
     }
+
+    // Record Activity
+    await recordActivity({
+      userId,
+      type: "profile_updated",
+      description: `Updated skills: teaching (${skillsTeach.length}), learning (${skillsLearn.length})`
+    });
 
     res.json({ success: true });
   } catch (error) {

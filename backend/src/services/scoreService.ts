@@ -1,6 +1,7 @@
 import { eq, and } from "drizzle-orm";
 import { db } from "../db";
 import { users, sessions, requests } from "../db/schema";
+import { recordActivity } from "./activityService";
 
 interface ScoreCalculationContext {
   tutorId: number;
@@ -79,7 +80,22 @@ export async function processSessionScore(context: ScoreCalculationContext) {
     await tx.update(sessions)
       .set({ status: "completed", completedAt: new Date() })
       .where(eq(sessions.id, sessionId));
-  });
+    });
+
+    // Record Activities
+    await recordActivity({
+      userId: tutor.id,
+      type: "session_completed",
+      description: `Completed a teaching session with ${learner.name}`,
+      xpGained: tutorScoreGain
+    });
+
+    await recordActivity({
+      userId: learner.id,
+      type: "session_completed",
+      description: `Completed a learning session with ${tutor.name}`,
+      xpGained: learnerScoreGain
+    });
 
   return {
     tutorGain: tutorScoreGain,

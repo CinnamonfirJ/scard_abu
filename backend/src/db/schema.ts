@@ -76,3 +76,13 @@ export const ratings = pgTable("ratings", {
   comment: text("comment"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// Activities Table
+export const activities = pgTable("activities", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  type: text("type").notNull(), // e.g., "learn_skill", "teach_skill", "session_completed"
+  description: text("description").notNull(),
+  xpGained: integer("xp_gained").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
