@@ -25,34 +25,40 @@ import { useStore } from "../store/useStore";
 import { EditProfileScreen } from "../screens/EditProfileScreen";
 import { UserDetailScreen } from "../screens/UserDetailScreen";
 
-const TabStack = createBlankStackNavigator();
+const Tab = createBottomTabNavigator();
 const Stack = createBlankStackNavigator();
 
-const CustomTabBar = ({ navigation, focusedIndex }: any) => {
-  if (focusedIndex === undefined) return null;
-
-  const tabs = [
-    { name: 'Activity', icon: Home },
-    { name: 'Discover', icon: Compass },
-    { name: 'Ranking', icon: Trophy },
-    { name: 'Profile', icon: UserIcon },
-  ];
-
+const CustomTabBar = ({ state, descriptors, navigation }: any) => {
   return (
     <View style={styles.tabBar}>
-      {tabs.map((tab, index) => {
-        const isFocused = focusedIndex === index;
-        const Icon = tab.icon;
+      {state.routes.map((route: any, index: number) => {
+        const { options } = descriptors[route.key];
+        const isFocused = state.index === index;
+
+        const onPress = () => {
+          const event = navigation.emit({
+            type: 'tabPress',
+            target: route.key,
+            canPreventDefault: true,
+          });
+
+          if (!isFocused && !event.defaultPrevented) {
+            navigation.navigate(route.name);
+          }
+        };
+
+        const Icon = options.tabBarIcon;
 
         return (
           <TouchableOpacity
-            key={tab.name}
-            onPress={() => navigation.navigate(tab.name)}
+            key={route.name}
+            onPress={onPress}
             style={styles.tabItem}
+            activeOpacity={0.7}
           >
-            <Icon color={isFocused ? COLORS.primary : COLORS.textLight} size={24} />
+            {Icon && <Icon color={isFocused ? COLORS.primary : COLORS.textLight} size={24} />}
             <Text style={[styles.tabLabel, { color: isFocused ? COLORS.primary : COLORS.textLight }]}>
-              {tab.name}
+              {route.name}
             </Text>
           </TouchableOpacity>
         );
@@ -63,18 +69,33 @@ const CustomTabBar = ({ navigation, focusedIndex }: any) => {
 
 const TabNavigator = () => {
   return (
-    <TabStack.Navigator
+    <Tab.Navigator
+      tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
-        ...tabTransition,
-        overlay: (props) => <CustomTabBar {...props} />,
-        overlayShown: true,
+        headerShown: false,
       }}
     >
-      <TabStack.Screen name='Activity' component={HomeScreen} />
-      <TabStack.Screen name='Discover' component={DiscoverScreen} />
-      <TabStack.Screen name='Ranking' component={LeaderboardScreen} />
-      <TabStack.Screen name='Profile' component={ProfileScreen} />
-    </TabStack.Navigator>
+      <Tab.Screen 
+        name='Activity' 
+        component={HomeScreen} 
+        options={{ tabBarIcon: (props: any) => <Home {...props} /> }}
+      />
+      <Tab.Screen 
+        name='Discover' 
+        component={DiscoverScreen} 
+        options={{ tabBarIcon: (props: any) => <Compass {...props} /> }}
+      />
+      <Tab.Screen 
+        name='Ranking' 
+        component={LeaderboardScreen} 
+        options={{ tabBarIcon: (props: any) => <Trophy {...props} /> }}
+      />
+      <Tab.Screen 
+        name='Profile' 
+        component={ProfileScreen} 
+        options={{ tabBarIcon: (props: any) => <UserIcon {...props} /> }}
+      />
+    </Tab.Navigator>
   );
 };
 
@@ -135,7 +156,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     alignItems: 'center',
     // Position at bottom of screen
-    position: 'absolute',
+    position: 'relative',
     bottom: 0,
     left: 0,
     right: 0,

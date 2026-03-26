@@ -84,11 +84,23 @@ export const AppButton: React.FC<AppButtonProps> = ({
   const getSizeStyle = () => {
     switch (size) {
       case "sm":
-        return { paddingVertical: SPACING.xs, paddingHorizontal: SPACING.md };
+        return { 
+          paddingVertical: SPACING.xs, 
+          paddingHorizontal: SPACING.md,
+          height: 36,
+        };
       case "lg":
-        return { paddingVertical: SPACING.md, paddingHorizontal: SPACING.xl };
+        return { 
+          paddingVertical: SPACING.md, 
+          paddingHorizontal: SPACING.xl,
+          height: 56,
+        };
       default:
-        return { paddingVertical: SPACING.sm, paddingHorizontal: SPACING.lg };
+        return { 
+          paddingVertical: SPACING.sm, 
+          paddingHorizontal: SPACING.lg,
+          height: 48,
+        };
     }
   };
 

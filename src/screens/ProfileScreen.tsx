@@ -7,11 +7,11 @@ import { AppButton } from "../components/AppButton";
 import { AnimatedCounter } from "../components/AnimatedCounter";
 import { COLORS, SPACING, BORDER_RADIUS } from "../constants/theme";
 import { useStore } from "../store/useStore";
-import { Trophy, Award, MapPin, Zap, User as UserIcon } from "lucide-react-native";
+import { LogOut, Trophy, Award, MapPin, Zap, User as UserIcon } from "lucide-react-native";
 import { useState, useEffect } from "react";
 
 export const ProfileScreen = ({ navigation }: any) => {
-  const { currentUser } = useStore();
+  const { currentUser, logout } = useStore();
 
   if (!currentUser) return <View style={[styles.container, {justifyContent: 'center', alignItems: 'center'}]}><Text>Loading profile...</Text></View>;
 
@@ -135,6 +135,15 @@ export const ProfileScreen = ({ navigation }: any) => {
           variant='outline'
           onPress={() => navigation.navigate("EditProfile")}
           style={styles.editButton}
+        />
+
+        <AppButton
+          title='Log Out'
+          variant='ghost'
+          onPress={() => logout()}
+          style={styles.logoutButton}
+          textStyle={{ color: COLORS.red }}
+          icon={<LogOut color={COLORS.red} size={20} style={{ marginRight: 8 }} />}
         />
 
         <View style={{ height: 40 }} />
@@ -278,6 +287,9 @@ const styles = StyleSheet.create({
   },
   editButton: {
     marginTop: SPACING.md,
+  },
+  logoutButton: {
+    marginTop: SPACING.sm,
   },
   contactInfo: {
     marginTop: SPACING.md,

@@ -39,7 +39,7 @@ interface RequestsModalProps {
 export const RequestsModal = ({ isVisible, onClose }: RequestsModalProps) => {
   const { requests, currentUser, respondToRequest, fetchRequests } = useStore();
   const [activeTab, setActiveTab ] = useState<"received" | "sent">("received");
-  const [loading, setLoading] = useState(false);
+  const [processingId, setProcessingId] = useState<number | null>(null);
 
   const receivedRequests = (requests || []).filter(r => r.receiverId === currentUser?.id);
   const sentRequests = (requests || []).filter(r => r.senderId === currentUser?.id);
@@ -53,13 +53,13 @@ export const RequestsModal = ({ isVisible, onClose }: RequestsModalProps) => {
         { 
           text: "Confirm", 
           onPress: async () => {
-            setLoading(true);
+            setProcessingId(requestId);
             try {
               await respondToRequest(requestId, status);
             } catch (error) {
               Alert.alert("Error", "Failed to update request status");
             } finally {
-              setLoading(false);
+              setProcessingId(null);
             }
           }
         }
@@ -114,18 +114,32 @@ export const RequestsModal = ({ isVisible, onClose }: RequestsModalProps) => {
         {isReceived && item.status === "pending" && (
           <View style={styles.actions}>
             <TouchableOpacity 
-              onPress={() => handleResponse(item.id, "rejected")}
+              onPress={() => !processingId && handleResponse(item.id, "rejected")}
               style={[styles.actionButton, styles.declineButton]}
+              disabled={!!processingId}
             >
-              <XCircle size={20} color={COLORS.red} />
-              <Text style={[styles.actionText, { color: COLORS.red }]}>Decline</Text>
+              {processingId === item.id ? (
+                <ActivityIndicator size="small" color={COLORS.red} />
+              ) : (
+                <>
+                  <XCircle size={20} color={COLORS.red} />
+                  <Text style={[styles.actionText, { color: COLORS.red }]}>Decline</Text>
+                </>
+              )}
             </TouchableOpacity>
             <TouchableOpacity 
-              onPress={() => handleResponse(item.id, "accepted")}
+              onPress={() => !processingId && handleResponse(item.id, "accepted")}
               style={[styles.actionButton, styles.acceptButton]}
+              disabled={!!processingId}
             >
-              <CheckCircle2 size={20} color={COLORS.primary} />
-              <Text style={[styles.actionText, { color: COLORS.primary }]}>Accept</Text>
+              {processingId === item.id ? (
+                <ActivityIndicator size="small" color={COLORS.primary} />
+              ) : (
+                <>
+                  <CheckCircle2 size={20} color={COLORS.primary} />
+                  <Text style={[styles.actionText, { color: COLORS.primary }]}>Accept</Text>
+                </>
+              )}
             </TouchableOpacity>
           </View>
         )}
@@ -168,26 +182,20 @@ export const RequestsModal = ({ isVisible, onClose }: RequestsModalProps) => {
             </TouchableOpacity>
           </View>
 
-          {loading ? (
-            <View style={styles.centered}>
-              <ActivityIndicator size="large" color={COLORS.primary} />
-            </View>
-          ) : (
-            <FlatList
-              data={activeTab === "received" ? receivedRequests : sentRequests}
-              keyExtractor={(item) => item.id.toString()}
-              renderItem={renderRequestItem}
-              contentContainerStyle={styles.list}
-              ListEmptyComponent={
-                <View style={styles.empty}>
-                  <Clock size={48} color={COLORS.border} />
-                  <Text style={styles.emptyText}>No {activeTab} requests yet.</Text>
-                </View>
-              }
-              onRefresh={fetchRequests}
-              refreshing={false}
-            />
-          )}
+          <FlatList
+            data={activeTab === "received" ? receivedRequests : sentRequests}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={renderRequestItem}
+            contentContainerStyle={styles.list}
+            ListEmptyComponent={
+              <View style={styles.empty}>
+                <Clock size={48} color={COLORS.border} />
+                <Text style={styles.emptyText}>No {activeTab} requests yet.</Text>
+              </View>
+            }
+            onRefresh={fetchRequests}
+            refreshing={false}
+          />
         </View>
       </View>
     </Modal>

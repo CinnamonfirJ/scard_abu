@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { View, StyleSheet, ScrollView, TextInput, KeyboardAvoidingView, Platform, Image, TouchableOpacity, Text, Alert } from "react-native";
 import { AppHeader } from "../components/AppHeader";
 import { AppButton } from "../components/AppButton";
+import { AppTextInput } from "../components/AppTextInput";
+import { AppPicker } from "../components/AppPicker";
 import { COLORS, SPACING, BORDER_RADIUS } from "../constants/theme";
 import { useStore } from "../store/useStore";
 import { fetchClient } from "../api/client";
@@ -108,28 +110,40 @@ export const EditProfileScreen = ({ navigation }: any) => {
             <Text style={styles.changeText}>Tap to change picture</Text>
           </View>
 
-          <TextInput style={styles.input} placeholder='Name' value={form.name} onChangeText={(t) => setForm({ ...form, name: t })} />
-          <TextInput style={styles.input} placeholder='Phone' value={form.phone} onChangeText={(t) => setForm({ ...form, phone: t })} />
-          <TextInput style={styles.input} placeholder='Department' value={form.department} onChangeText={(t) => setForm({ ...form, department: t })} />
-          <TextInput style={styles.input} placeholder='Faculty' value={form.faculty} onChangeText={(t) => setForm({ ...form, faculty: t })} />
-          <TextInput style={styles.input} placeholder='Year' value={form.year} keyboardType="numeric" onChangeText={(t) => setForm({ ...form, year: t })} />
+          <AppTextInput placeholder='Name' value={form.name} onChangeText={(t) => setForm({ ...form, name: t })} />
+          <AppTextInput placeholder='Phone' value={form.phone} onChangeText={(t) => setForm({ ...form, phone: t })} />
+          <AppTextInput placeholder='Department' value={form.department} onChangeText={(t) => setForm({ ...form, department: t })} />
+          <AppTextInput placeholder='Faculty' value={form.faculty} onChangeText={(t) => setForm({ ...form, faculty: t })} />
+          <AppPicker 
+            label="Year of Study" 
+            value={form.year} 
+            options={[
+              { label: "Year 1", value: "1" },
+              { label: "Year 2", value: "2" },
+              { label: "Year 3", value: "3" },
+              { label: "Year 4", value: "4" },
+              { label: "Year 5", value: "5" },
+              { label: "Year 6", value: "6" },
+            ]} 
+            onSelect={(v) => setForm({ ...form, year: v })} 
+          />
 
-          <TextInput 
-            style={styles.textArea} 
+          <AppTextInput 
             placeholder='Skills to Teach (comma separated)' 
             multiline 
             value={skillsTeachInput} 
             onChangeText={setSkillsTeachInput} 
+            style={{ height: 80 }}
           />
-          <TextInput 
-            style={styles.textArea} 
+          <AppTextInput 
             placeholder='Skills to Learn (comma separated)' 
             multiline 
             value={skillsLearnInput} 
             onChangeText={setSkillsLearnInput} 
+            style={{ height: 80 }}
           />
 
-          <AppButton title={loading ? "Saving..." : "Save Changes"} onPress={handleSave} style={{ marginTop: SPACING.lg }} />
+          <AppButton title="Save Changes" onPress={handleSave} loading={loading} style={{ marginTop: SPACING.lg }} />
           <View style={{ height: 40 }} />
         </Transition.ScrollView>
       </View>

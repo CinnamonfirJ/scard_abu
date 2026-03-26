@@ -87,8 +87,9 @@ export const RequestScreen = ({ route, navigation }: any) => {
       </ScrollView>
       <View style={styles.footer}>
         <AppButton 
-          title={loading ? "Sending..." : "Send Request"} 
+          title="Send Request" 
           onPress={handleSend} 
+          loading={loading}
           icon={<Send color={COLORS.white} size={20} style={{ marginRight: 8 }} />}
         />
         <AppButton 
