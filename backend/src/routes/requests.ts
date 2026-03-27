@@ -141,12 +141,6 @@ router.patch("/:id", protect, async (req: AuthRequest, res) => {
         learnerId,
         status: "scheduled"
       });
-
-      const [senderUsr] = await db.select({ totalScore: users.totalScore }).from(users).where(eq(users.id, updated.senderId));
-      const [receiverUsr] = await db.select({ totalScore: users.totalScore }).from(users).where(eq(users.id, updated.receiverId));
-      
-      if (senderUsr) await db.update(users).set({ totalScore: (senderUsr.totalScore || 0) + 10 }).where(eq(users.id, updated.senderId));
-      if (receiverUsr) await db.update(users).set({ totalScore: (receiverUsr.totalScore || 0) + 10 }).where(eq(users.id, updated.receiverId));
     }
 
     res.json(updated);

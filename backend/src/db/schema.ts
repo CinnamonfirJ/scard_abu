@@ -62,6 +62,13 @@ export const sessions = pgTable("sessions", {
   status: sessionStatusEnum("status").default("scheduled").notNull(),
   confirmedByTutor: boolean("confirmed_by_tutor").default(false).notNull(),
   confirmedByLearner: boolean("confirmed_by_learner").default(false).notNull(),
+  tutorOutcome: text("tutor_outcome"), // "yes" or "no"
+  learnerOutcome: text("learner_outcome"), // "yes" or "no"
+  tutorFeedback: text("tutor_feedback"),
+  learnerFeedback: text("learner_feedback"),
+  tutorEvidence: text("tutor_evidence"),
+  learnerEvidence: text("learner_evidence"),
+  disputeFlag: boolean("dispute_flag").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   completedAt: timestamp("completed_at"),
 });

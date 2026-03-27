@@ -6,6 +6,7 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppCard } from "../components/AppCard";
@@ -32,36 +33,45 @@ export const HomeScreen = ({ navigation }: any) => {
   const [loading, setLoading] = useState(true);
   const [isRequestsVisible, setIsRequestsVisible] = useState(false);
 
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchData = useCallback(async () => {
+    try {
+      const [skillsRes, teachersRes, activitiesRes, requestsRes] =
+        await Promise.all([
+          fetchClient("/skills/trending").catch(() => []),
+          fetchClient("/users/top-teachers").catch(() => []),
+          fetchClient("/users/me/activities").catch(() => []),
+          fetchClient("/requests").catch(() => []),
+        ]);
+
+      setTrendingSkills(skillsRes);
+      setTopTeachers(teachersRes);
+      setActivities(activitiesRes);
+      setRequests(
+        requestsRes.filter(
+          (r: any) =>
+            r.status === "pending" && r.receiverId === currentUser?.id,
+        ),
+      );
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [currentUser?.id]);
+
   useFocusEffect(
     useCallback(() => {
-      const fetchData = async () => {
-        try {
-          const [skillsRes, teachersRes, activitiesRes, requestsRes] =
-            await Promise.all([
-              fetchClient("/skills/trending").catch(() => []),
-              fetchClient("/users/top-teachers").catch(() => []),
-              fetchClient("/users/me/activities").catch(() => []),
-              fetchClient("/requests").catch(() => []),
-            ]);
-
-          setTrendingSkills(skillsRes);
-          setTopTeachers(teachersRes);
-          setActivities(activitiesRes);
-          setRequests(
-            requestsRes.filter(
-              (r: any) =>
-                r.status === "pending" && r.receiverId === currentUser?.id,
-            ),
-          );
-        } catch (err) {
-          console.error(err);
-        } finally {
-          setLoading(false);
-        }
-      };
       fetchData();
-    }, [currentUser?.id])
+    }, [fetchData])
   );
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchData();
+  }, [fetchData]);
 
   const handleRequestAction = async (id: number, status: string) => {
     try {
@@ -105,6 +115,9 @@ export const HomeScreen = ({ navigation }: any) => {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} />
+        }
       >
         <View style={styles.headerRow}>
           <View style={styles.welcomeSection}>

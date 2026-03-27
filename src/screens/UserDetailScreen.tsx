@@ -140,15 +140,41 @@ export const UserDetailScreen = ({ route, navigation }: any) => {
             </View>
           </View>
 
-          <AppButton
-            title='Request to Learn'
-            onPress={() => {
-              const firstSkillId = user.skills && user.skills.length > 0 ? user.skills[0].skillId : 1;
-              navigation.navigate("Request", { userId: user.id, userName: user.name, skillId: firstSkillId });
-            }}
-            style={styles.connectButton}
-            icon={<MessageCircle color={COLORS.white} size={20} style={{ marginRight: 8 }} />}
-          />
+          {isConnectionAccepted ? (
+            <View style={styles.contactInfo}>
+              <Text style={styles.sectionTitle}>Contact Informaton 📞</Text>
+              <AppCard variant="outlined" style={styles.contactCard}>
+                <View style={styles.contactItem}>
+                  <Phone size={20} color={COLORS.primary} />
+                  <Text style={styles.contactText}>{user.phone}</Text>
+                </View>
+                <Text style={styles.whatsappNote}>
+                  Feel free to connect externally to schedule your session!
+                </Text>
+                <AppButton
+                  title="Message on WhatsApp"
+                  onPress={() => {
+                    const phone = user.phone.replace(/[^0-9]/g, "");
+                    // Note: In a real app, use Linking.openURL(`whatsapp://send?phone=${phone}`)
+                    console.log(`Opening WhatsApp for ${phone}`);
+                    alert(`In a real app, this would open WhatsApp for ${user.phone}`);
+                  }}
+                  style={[styles.connectButton, { backgroundColor: "#25D366" }]}
+                  icon={<MessageCircle color={COLORS.white} size={20} style={{ marginRight: 8 }} />}
+                />
+              </AppCard>
+            </View>
+          ) : (
+            <AppButton
+              title='Request to Learn'
+              onPress={() => {
+                const firstSkillId = user.skills && user.skills.length > 0 ? user.skills[0].skillId : 1;
+                navigation.navigate("Request", { userId: user.id, userName: user.name, skillId: firstSkillId });
+              }}
+              style={styles.connectButton}
+              icon={<MessageCircle color={COLORS.white} size={20} style={{ marginRight: 8 }} />}
+            />
+          )}
 
           <View style={{ height: 40 }} />
         </Transition.ScrollView>
@@ -209,5 +235,17 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     fontStyle: "italic",
     marginTop: 4,
+  },
+  contactCard: {
+    padding: SPACING.md,
+    backgroundColor: COLORS.lightGray,
+    width: "100%",
+  },
+  whatsappNote: {
+    fontSize: 12,
+    color: COLORS.textLight,
+    marginTop: 8,
+    textAlign: "center",
+    marginBottom: SPACING.md,
   },
 });

@@ -43,6 +43,13 @@ export const EditProfileScreen = ({ navigation }: any) => {
       });
 
       if (!result.canceled && result.assets[0].base64) {
+        // Enforce 5MB limit on the frontend
+        const base64Length = result.assets[0].base64.length;
+        // base64 is ~1.33x the original size. 5MB * 1.33 is ~6.65M characters.
+        if (base64Length > 7 * 1024 * 1024) {
+          Alert.alert("Image Too Large", "Please select an image smaller than 5MB.");
+          return;
+        }
         setAvatar(`data:image/jpeg;base64,${result.assets[0].base64}`);
       }
     } catch (error) {
@@ -108,6 +115,7 @@ export const EditProfileScreen = ({ navigation }: any) => {
               </View>
             </TouchableOpacity>
             <Text style={styles.changeText}>Tap to change picture</Text>
+            <Text style={styles.sizeLimitText}>Max size: 5MB</Text>
           </View>
 
           <AppTextInput placeholder='Name' value={form.name} onChangeText={(t) => setForm({ ...form, name: t })} />
@@ -216,6 +224,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.primary,
     fontWeight: "600",
+  },
+  sizeLimitText: {
+    marginTop: 2,
+    fontSize: 12,
+    color: COLORS.textLight,
   },
   input: {
     borderWidth: 1, borderColor: COLORS.border, borderRadius: BORDER_RADIUS.md,

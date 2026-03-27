@@ -13,66 +13,60 @@ interface ScoreCalculationContext {
  * Calculates and applies score updates for a completed session.
  * 
  * Rules:
- * - Base points: Teach (+10), Learn (+5), Complete (+10)
- * - Bonus: Cross-dept (+5), Cross-faculty (+15) (faculty takes priority)
- * - Both users get the Complete bonus and similarity bonuses.
- * - Caps: Prevent excessive daily farming (simplistic approach here).
+ * - Base Rules: Same faculty (10 XP), Different faculty (15 XP)
+ * - Initiator Bonus: The user who sent the initial request receives a bonus of 0.25 × base XP.
+ * - XP is awarded individually.
  */
 export async function processSessionScore(context: ScoreCalculationContext) {
   const { tutorId, learnerId, sessionId } = context;
 
-  // 1. Fetch both users
+  // 1. Fetch both users and the session/request
   const [tutor] = await db.select().from(users).where(eq(users.id, tutorId)).limit(1);
   const [learner] = await db.select().from(users).where(eq(users.id, learnerId)).limit(1);
+  const [session] = await db.select().from(sessions).where(eq(sessions.id, sessionId)).limit(1);
 
-  if (!tutor || !learner) {
-    throw new Error("Tutor or Learner not found");
+  if (!tutor || !learner || !session) {
+    throw new Error("Tutor, Learner, or Session not found");
   }
 
-  // 2. Base Scores
-  let tutorScoreGain = 10; // Teach
-  let learnerScoreGain = 5; // Learn
-  
-  // Base completion bonus for both
-  tutorScoreGain += 10;
-  learnerScoreGain += 10;
+  const [request] = await db.select().from(requests).where(eq(requests.id, session.requestId)).limit(1);
+  if (!request) {
+    throw new Error("Request not found");
+  }
 
-  // 3. Faculty & Department Bonuses 
-  let bonus = 0;
+  // 2. Base XP Calculation
+  let baseXP = 10; // Same faculty
   if (tutor.faculty !== learner.faculty) {
-    bonus = 15; // Cross-faculty bonus
-  } else if (tutor.department !== learner.department) {
-    bonus = 5; // Cross-department bonus
+    baseXP = 15; // Different faculty
   }
 
-  tutorScoreGain += bonus;
-  learnerScoreGain += bonus;
+  // 3. Award individually with Initiator Bonus
+  let tutorScoreGain = baseXP;
+  let learnerScoreGain = baseXP;
 
-  // 4. Anti-gaming / Daily caps (Simplistic: Cap at 100 points per day)
-  // Assuming a cron job or login hook resets daily_score
-  // For production, we'd check if (tutor.dailyScore + tutorScoreGain > 100) etc.
-  
-  const finalTutorDaily = tutor.dailyScore + tutorScoreGain;
-  const finalLearnerDaily = learner.dailyScore + learnerScoreGain;
+  const initiatorBonus = 0.25 * baseXP;
 
-  // We could implement strict truncating here if final > 100
-  // e.g., tutorScoreGain = Math.max(0, 100 - tutor.dailyScore); if capping at 100
-  
-  // 5. Atomic Update
+  if (request.senderId === tutorId) {
+    tutorScoreGain += initiatorBonus;
+  } else if (request.senderId === learnerId) {
+    learnerScoreGain += initiatorBonus;
+  }
+
+  // 4. Atomic Update
   await db.transaction(async (tx) => {
     // Update Tutor
     await tx.update(users)
       .set({ 
-        totalScore: tutor.totalScore + tutorScoreGain,
-        dailyScore: tutor.dailyScore + tutorScoreGain 
+        totalScore: (tutor.totalScore || 0) + tutorScoreGain,
+        dailyScore: (tutor.dailyScore || 0) + tutorScoreGain 
       })
       .where(eq(users.id, tutor.id));
 
     // Update Learner
     await tx.update(users)
       .set({ 
-        totalScore: learner.totalScore + learnerScoreGain,
-        dailyScore: learner.dailyScore + learnerScoreGain 
+        totalScore: (learner.totalScore || 0) + learnerScoreGain,
+        dailyScore: (learner.dailyScore || 0) + learnerScoreGain 
       })
       .where(eq(users.id, learner.id));
       
@@ -86,15 +80,15 @@ export async function processSessionScore(context: ScoreCalculationContext) {
     await recordActivity({
       userId: tutor.id,
       type: "session_completed",
-      description: `Completed a teaching session with ${learner.name}`,
-      xpGained: tutorScoreGain
+      description: `Completed a session with ${learner.name}. Earned ${tutorScoreGain} XP.`,
+      xpGained: Math.floor(tutorScoreGain)
     });
 
     await recordActivity({
       userId: learner.id,
       type: "session_completed",
-      description: `Completed a learning session with ${tutor.name}`,
-      xpGained: learnerScoreGain
+      description: `Completed a session with ${tutor.name}. Earned ${learnerScoreGain} XP.`,
+      xpGained: Math.floor(learnerScoreGain)
     });
 
   return {

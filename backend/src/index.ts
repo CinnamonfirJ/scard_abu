@@ -9,6 +9,7 @@ import skillsRoutes from "./routes/skills";
 import requestsRoutes from "./routes/requests";
 import sessionsRoutes from "./routes/sessions";
 import leaderboardRoutes from "./routes/leaderboard";
+import { checkPendingConfirmations } from "./services/confirmationService";
 
 dotenv.config();
 
@@ -60,4 +61,12 @@ app.use(
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Listening on port: ${PORT}`);
+  
+  // Start background confirmation checker (every hour)
+  setInterval(() => {
+    checkPendingConfirmations();
+  }, 60 * 60 * 1000);
+  
+  // Run once on start
+  checkPendingConfirmations();
 });

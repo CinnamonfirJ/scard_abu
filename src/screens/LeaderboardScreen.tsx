@@ -7,9 +7,10 @@ import {
   Image,
   StyleSheet,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { useStore, User } from "../store/useStore";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AppHeader } from "../components/AppHeader";
 import { AppBadge } from "../components/AppBadge";
 import { BORDER_RADIUS, COLORS, SPACING } from "../constants/theme";
@@ -21,25 +22,33 @@ export const LeaderboardScreen = ({ navigation }: any) => {
   const [activeTab, setActiveTab] = useState("Global");
   const [loading, setLoading] = useState(true);
   const [leaderboardData, setLeaderboardData] = useState<User[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchData = useCallback(async () => {
+    try {
+      let endpoint = "/leaderboard/global";
+      if (activeTab === "Dept") endpoint = "/leaderboard/department?dept=Computer Science"; // hardcoded for demo
+      if (activeTab === "Weekly") endpoint = "/leaderboard/weekly";
+      
+      const data = await fetchClient(endpoint);
+      setLeaderboardData(data);
+    } catch (error) {
+      console.error("Leaderboard fetch error:", error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [activeTab]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        let endpoint = "/leaderboard/global";
-        if (activeTab === "Dept") endpoint = "/leaderboard/department?dept=Computer Science"; // hardcoded for demo
-        if (activeTab === "Weekly") endpoint = "/leaderboard/weekly";
-        
-        const data = await fetchClient(endpoint);
-        setLeaderboardData(data);
-      } catch (error) {
-        console.error("Leaderboard fetch error:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    setLoading(true);
     fetchData();
-  }, [activeTab]);
+  }, [fetchData]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchData();
+  }, [fetchData]);
 
   const top3 = leaderboardData.slice(0, 3);
   const others = leaderboardData.slice(3);
@@ -97,7 +106,12 @@ export const LeaderboardScreen = ({ navigation }: any) => {
         ))}
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} />
+        }
+      >
         {loading ? renderSkeletons() : (
           <>
             <View style={styles.podium}>

@@ -25,6 +25,7 @@ import { ConfirmationScreen } from "../screens/ConfirmationScreen";
 import { useStore } from "../store/useStore";
 import { EditProfileScreen } from "../screens/EditProfileScreen";
 import { UserDetailScreen } from "../screens/UserDetailScreen";
+import { ConfirmSessionScreen } from "../screens/ConfirmSessionScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createBlankStackNavigator();
@@ -141,6 +142,11 @@ export const MainNavigator = () => {
             name='UserDetail' 
             component={UserDetailScreen} 
             options={bottomSheetTransition} 
+          />
+          <Stack.Screen 
+            name='ConfirmSession' 
+            component={ConfirmSessionScreen} 
+            options={modalTransition} 
           />
         </>
       )}

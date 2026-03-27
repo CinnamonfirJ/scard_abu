@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, RefreshControl } from "react-native";
 import { AppHeader } from "../components/AppHeader";
 import { AppCard } from "../components/AppCard";
 import { AppBadge } from "../components/AppBadge";
@@ -9,23 +9,31 @@ import { fetchClient } from "../api/client";
 import { COLORS, SPACING, BORDER_RADIUS } from "../constants/theme";
 import { Session } from "../store/useStore";
 
-export const SessionsScreen = () => {
+export const SessionsScreen = ({ navigation }: any) => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadSessions = async () => {
+    try {
+      const data = await fetchClient("/sessions");
+      setSessions(data);
+    } catch (error) {
+      console.error("Failed to load sessions", error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    const loadSessions = async () => {
-      try {
-        const data = await fetchClient("/sessions");
-        setSessions(data);
-      } catch (error) {
-        console.error("Failed to load sessions", error);
-      } finally {
-        setLoading(false);
-      }
-    };
     loadSessions();
   }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadSessions();
+  };
 
   const confirmSession = async (id: number) => {
     try {
@@ -52,7 +60,12 @@ export const SessionsScreen = () => {
   return (
     <View style={styles.container}>
       <AppHeader title="My Sessions" />
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView 
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} />
+        }
+      >
         {loading ? renderSkeletons() : (
           sessions.length === 0 ? (
              <Text style={styles.emptyText}>No active sessions</Text>
@@ -69,7 +82,7 @@ export const SessionsScreen = () => {
                 {session.status === 'scheduled' && (
                    <AppButton 
                      title="Confirm Completion" 
-                     onPress={() => confirmSession(session.id)}
+                     onPress={() => navigation.navigate("ConfirmSession", { sessionId: session.id })}
                      style={{ marginTop: SPACING.md }} 
                    />
                 )}

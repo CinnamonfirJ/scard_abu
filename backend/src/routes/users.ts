@@ -227,6 +227,13 @@ router.put("/:id", protect, async (req: AuthRequest, res) => {
 
     const { name, phone, department, faculty, year, avatar } = req.body;
     
+    // Enforcement of ~5MB limit for avatar (base64 is ~33% larger than binary)
+    // 5MB * 1.33 = 6.65MB. Let's cap at 7MB for the string length.
+    if (avatar && avatar.length > 7 * 1024 * 1024) {
+      res.status(400).json({ error: "Avatar image is too large. Max size is 5MB." });
+      return;
+    }
+
     const [updatedUser] = await db.update(users).set({
       name, phone, department, faculty, year, avatar
     }).where(eq(users.id, userId)).returning({

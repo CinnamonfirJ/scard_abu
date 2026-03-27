@@ -25,6 +25,7 @@ router.patch("/:id/confirm", protect, async (req: AuthRequest, res) => {
   try {
     const sessionId = parseInt(req.params.id as string);
     const userId = req.user!.userId;
+    const { outcome, feedback, evidence } = req.body; // outcome: "yes" | "no"
 
     const [session] = await db.select().from(sessions).where(eq(sessions.id, sessionId));
     if (!session) {
@@ -46,24 +47,46 @@ router.patch("/:id/confirm", protect, async (req: AuthRequest, res) => {
     }
 
     const updates: any = {};
-    if (isTutor) updates.confirmedByTutor = true;
-    if (isLearner) updates.confirmedByLearner = true;
+    if (isTutor) {
+      updates.confirmedByTutor = true;
+      updates.tutorOutcome = outcome;
+      updates.tutorFeedback = feedback;
+      updates.tutorEvidence = evidence;
+    } else {
+      updates.confirmedByLearner = true;
+      updates.learnerOutcome = outcome;
+      updates.learnerFeedback = feedback;
+      updates.learnerEvidence = evidence;
+    }
+
+    // Set dispute flag if anyone rejects
+    if (outcome === "no") {
+      updates.disputeFlag = true;
+    }
 
     const [updated] = await db.update(sessions).set(updates).where(eq(sessions.id, sessionId)).returning();
 
-    // If both confirmed, complete it and process scores
-    if (updated.confirmedByTutor && updated.confirmedByLearner && updated.status !== "completed") {
-      const { tutorGain, learnerGain } = await processSessionScore({
-        tutorId: session.tutorId,
-        learnerId: session.learnerId,
-        sessionId: session.id
-      });
-      res.json({ message: "Session completed", session: updated, tutorGain, learnerGain });
-      return;
+    // If both confirmed
+    if (updated.confirmedByTutor && updated.confirmedByLearner) {
+      // If both said "yes", process scores
+      if (updated.tutorOutcome === "yes" && updated.learnerOutcome === "yes") {
+        const { tutorGain, learnerGain } = await processSessionScore({
+          tutorId: session.tutorId,
+          learnerId: session.learnerId,
+          sessionId: session.id
+        });
+        res.json({ message: "Session completed successfully", session: updated, tutorGain, learnerGain });
+        return;
+      } else {
+        // If one or both said "no", it stays in scheduled/disputed state until handled
+        res.json({ message: "Session flagged for dispute. No XP awarded.", session: updated });
+        return;
+      }
     }
 
     res.json({ message: "Confirmation recorded", session: updated });
   } catch (error) {
+    console.error("[SESSION_CONFIRM_ERROR]", error);
     res.status(500).json({ error: "Server error confirming session" });
   }
 });

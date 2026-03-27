@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -31,9 +31,19 @@ export const DiscoverScreen = ({ navigation }: any) => {
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadData = useCallback(() => {
+    setRefreshing(true);
+    fetchUsers().finally(() => {
+      setLoading(false);
+      setRefreshing(false);
+    });
+  }, [fetchUsers]);
+
   React.useEffect(() => {
-    fetchUsers().finally(() => setLoading(false));
-  }, []);
+    loadData();
+  }, [loadData]);
 
   const userList = users || [];
   const departments = Array.from(new Set(userList.map((u) => u.department).filter(Boolean)));
@@ -151,6 +161,8 @@ export const DiscoverScreen = ({ navigation }: any) => {
           renderItem={renderItem}
           estimatedItemSize={100}
           contentContainerStyle={styles.listContent}
+          onRefresh={loadData}
+          refreshing={refreshing}
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <Text style={styles.emptyTitle}>
