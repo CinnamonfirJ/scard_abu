@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "../db";
-import { requests, sessions, users } from "../db/schema";
+import { requests, sessions, users, skills } from "../db/schema";
 import { protect, AuthRequest } from "../middlewares/auth";
 import { z } from "zod";
 import { eq, or, aliasedTable } from "drizzle-orm";
@@ -21,6 +21,7 @@ router.get("/", protect, async (req: AuthRequest, res) => {
       senderId: requests.senderId,
       receiverId: requests.receiverId,
       skillId: requests.skillId,
+      skillName: skills.name,
       type: requests.type,
       status: requests.status,
       message: requests.message,
@@ -32,6 +33,7 @@ router.get("/", protect, async (req: AuthRequest, res) => {
     }).from(requests)
       .innerJoin(sender, eq(requests.senderId, sender.id))
       .innerJoin(receiver, eq(requests.receiverId, receiver.id))
+      .innerJoin(skills, eq(requests.skillId, skills.id))
       .where(or(eq(requests.senderId, userId), eq(requests.receiverId, userId)));
       
     res.json(myRequests);
@@ -75,9 +77,9 @@ router.post("/", protect, async (req: AuthRequest, res) => {
     if (receiver?.pushToken) {
       sendPushNotification(
         receiver.pushToken,
-        "New Request! 🎓",
-        `${sender?.name || "Someone"} wants to ${data.type} with you.`,
-        { requestId: newRequest.id }
+        "New Learning Request! 🎓",
+        `${sender?.name || "A user"} wants to ${data.type} a skill with you.`,
+        { requestId: newRequest.id, screen: "Home", tab: "Home" }
       );
     }
 
@@ -119,9 +121,11 @@ router.patch("/:id", protect, async (req: AuthRequest, res) => {
     if (sender?.pushToken) {
       sendPushNotification(
         sender.pushToken,
-        data.status === "accepted" ? "Request Accepted! 🎉" : "Request Update",
-        `${receiver?.name || "Common User"} has ${data.status} your request.`,
-        { requestId: updated.id, status: data.status }
+        data.status === "accepted" ? "Request Accepted! 🎉" : "Request Update ℹ️",
+        data.status === "accepted" 
+          ? `${receiver?.name || "User"} accepted your request! Time to start learning.`
+          : `${receiver?.name || "User"} has declined your request.`,
+        { requestId: updated.id, status: data.status, screen: "Sessions" }
       );
     }
 

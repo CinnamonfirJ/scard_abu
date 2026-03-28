@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,16 +10,18 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { 
   X as LucideX, 
   CheckCircle2 as LucideCheck, 
   XCircle as LucideXCircle, 
   Clock as LucideClock, 
   ArrowUpRight as LucideArrowUp, 
-  ArrowDownLeft as LucideArrowDown 
+  ArrowDownLeft as LucideArrowDown,
+  ClipboardCheck as LucideClipboard,
 } from "lucide-react-native";
 import { COLORS, SPACING, BORDER_RADIUS } from "../constants/theme";
-import { useStore, Request } from "../store/useStore";
+import { useStore, Request, Session } from "../store/useStore";
 import { AppBadge } from "./AppBadge";
 import { AppButton } from "./AppButton";
 import { AppCard } from "./AppCard";
@@ -30,6 +32,7 @@ const XCircle = LucideXCircle as any;
 const Clock = LucideClock as any;
 const ArrowUpRight = LucideArrowUp as any;
 const ArrowDownLeft = LucideArrowDown as any;
+const ClipboardCheck = LucideClipboard as any;
 
 interface RequestsModalProps {
   isVisible: boolean;
@@ -37,9 +40,19 @@ interface RequestsModalProps {
 }
 
 export const RequestsModal = ({ isVisible, onClose }: RequestsModalProps) => {
-  const { requests, currentUser, respondToRequest, fetchRequests } = useStore();
-  const [activeTab, setActiveTab ] = useState<"received" | "sent">("received");
+  const navigation = useNavigation<any>();
+  const { requests, sessions, currentUser, respondToRequest, fetchRequests, fetchSessions } = useStore();
+  const [activeTab, setActiveTab] = useState<"received" | "sent">("received");
   const [processingId, setProcessingId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch fresh data every time the modal opens
+  useEffect(() => {
+    if (isVisible) {
+      setLoading(true);
+      Promise.all([fetchRequests(), fetchSessions()]).finally(() => setLoading(false));
+    }
+  }, [isVisible]);
 
   const receivedRequests = (requests || []).filter(r => r.receiverId === currentUser?.id);
   const sentRequests = (requests || []).filter(r => r.senderId === currentUser?.id);
@@ -67,13 +80,42 @@ export const RequestsModal = ({ isVisible, onClose }: RequestsModalProps) => {
     );
   };
 
+  const handleConfirmSession = (requestId: number) => {
+    // Find the session that was created for this accepted request
+    const session = (sessions || []).find((s: Session) => s.requestId === requestId);
+    if (!session) {
+      Alert.alert("Not Ready", "The session is still being set up. Please try again in a moment.");
+      return;
+    }
+    onClose();
+    // Small delay to allow modal to close before navigating
+    setTimeout(() => {
+      navigation.navigate("ConfirmSession", { sessionId: session.id });
+    }, 300);
+  };
+
+  const getStatusVariant = (status: string): any => {
+    if (status === "accepted") return "success";
+    if (status === "rejected") return "gray";
+    return "orange";
+  };
+
   const renderRequestItem = ({ item }: { item: Request }) => {
     const isReceived = activeTab === "received";
     const otherPartyName = isReceived ? item.senderName : item.receiverName;
     const otherPartyAvatar = isReceived ? item.senderAvatar : item.receiverAvatar;
     
+    // Check if this accepted request already has a session confirmed by current user
+    const linkedSession = item.status === "accepted" 
+      ? (sessions || []).find((s: Session) => s.requestId === item.id) 
+      : null;
+    const alreadyConfirmed = linkedSession 
+      ? (linkedSession.tutorId === currentUser?.id ? linkedSession.confirmedByTutor : linkedSession.confirmedByLearner)
+      : false;
+
     return (
       <AppCard style={styles.card} variant="outlined">
+        {/* Header: Avatar + Name + Status Badge */}
         <View style={styles.header}>
           <View style={styles.userInfo}>
             {otherPartyAvatar ? (
@@ -90,14 +132,24 @@ export const RequestsModal = ({ isVisible, onClose }: RequestsModalProps) => {
           </View>
           <AppBadge 
             label={item.status.toUpperCase()} 
-            variant={item.status === "accepted" ? "success" : item.status === "pending" ? "orange" : "gray"} 
+            variant={getStatusVariant(item.status)} 
           />
         </View>
 
+        {/* Skill name */}
+        {item.skillName && (
+          <View style={styles.skillRow}>
+            <Text style={styles.skillLabel}>Skill: </Text>
+            <Text style={styles.skillValue}>{item.skillName}</Text>
+          </View>
+        )}
+
+        {/* Message */}
         <Text style={styles.message} numberOfLines={2}>
           {item.message || "No message provided."}
         </Text>
 
+        {/* Direction tag */}
         <View style={styles.typeContainer}>
           <View style={styles.typeBadge}>
             {isReceived ? (
@@ -111,6 +163,7 @@ export const RequestsModal = ({ isVisible, onClose }: RequestsModalProps) => {
           </View>
         </View>
 
+        {/* Accept / Decline — only for received pending requests */}
         {isReceived && item.status === "pending" && (
           <View style={styles.actions}>
             <TouchableOpacity 
@@ -141,6 +194,27 @@ export const RequestsModal = ({ isVisible, onClose }: RequestsModalProps) => {
                 </>
               )}
             </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Confirm Session CTA — visible once accepted, to both parties */}
+        {item.status === "accepted" && !alreadyConfirmed && (
+          <TouchableOpacity
+            style={styles.confirmButton}
+            onPress={() => handleConfirmSession(item.id)}
+          >
+            <ClipboardCheck size={18} color={COLORS.white} />
+            <Text style={styles.confirmButtonText}>Confirm Session Completion</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Already confirmed label */}
+        {item.status === "accepted" && alreadyConfirmed && (
+          <View style={styles.confirmedBadge}>
+            <CheckCircle2 size={16} color={COLORS.primary} />
+            <Text style={styles.confirmedText}>
+              {linkedSession?.status === "completed" ? "Session Completed ✓" : "Your confirmation submitted. Waiting for partner."}
+            </Text>
           </View>
         )}
       </AppCard>
@@ -182,20 +256,27 @@ export const RequestsModal = ({ isVisible, onClose }: RequestsModalProps) => {
             </TouchableOpacity>
           </View>
 
-          <FlatList
-            data={activeTab === "received" ? receivedRequests : sentRequests}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={renderRequestItem}
-            contentContainerStyle={styles.list}
-            ListEmptyComponent={
-              <View style={styles.empty}>
-                <Clock size={48} color={COLORS.border} />
-                <Text style={styles.emptyText}>No {activeTab} requests yet.</Text>
-              </View>
-            }
-            onRefresh={fetchRequests}
-            refreshing={false}
-          />
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={COLORS.primary} />
+              <Text style={styles.loadingText}>Loading requests...</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={activeTab === "received" ? receivedRequests : sentRequests}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={renderRequestItem}
+              contentContainerStyle={styles.list}
+              ListEmptyComponent={
+                <View style={styles.empty}>
+                  <Clock size={48} color={COLORS.border} />
+                  <Text style={styles.emptyText}>No {activeTab} requests yet.</Text>
+                </View>
+              }
+              onRefresh={() => { fetchRequests(); fetchSessions(); }}
+              refreshing={false}
+            />
+          )}
         </View>
       </View>
     </Modal>
@@ -212,7 +293,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     borderTopLeftRadius: BORDER_RADIUS.xl,
     borderTopRightRadius: BORDER_RADIUS.xl,
-    height: "85%",
+    height: "88%",
     padding: SPACING.md,
   },
   modalHeader: {
@@ -297,6 +378,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textLight,
   },
+  skillRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: SPACING.sm,
+  },
+  skillLabel: {
+    fontSize: 13,
+    color: COLORS.textLight,
+    fontWeight: "600",
+  },
+  skillValue: {
+    fontSize: 13,
+    color: COLORS.primary,
+    fontWeight: "bold",
+  },
   message: {
     fontSize: 14,
     color: COLORS.text,
@@ -347,10 +443,45 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold",
   },
-  centered: {
+  confirmButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: COLORS.primary,
+    borderRadius: BORDER_RADIUS.md,
+    paddingVertical: 12,
+    marginTop: SPACING.md,
+  },
+  confirmButtonText: {
+    color: COLORS.white,
+    fontWeight: "bold",
+    fontSize: 14,
+  },
+  confirmedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: SPACING.md,
+    backgroundColor: COLORS.primary + "10",
+    padding: SPACING.sm,
+    borderRadius: BORDER_RADIUS.sm,
+  },
+  confirmedText: {
+    fontSize: 13,
+    color: COLORS.primary,
+    fontWeight: "600",
+    flexShrink: 1,
+  },
+  loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: COLORS.textLight,
   },
   empty: {
     alignItems: "center",

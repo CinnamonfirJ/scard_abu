@@ -11,9 +11,9 @@ export async function checkPendingConfirmations() {
   try {
     const now = new Date();
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    // We only want to notify if they haven't been notified yet or haven't confirmed
-    // For simplicity, we'll notify if confirmedBy... is false and session is > 24h old
+    const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
     
+    // Fetch sessions that are older than 24h and still in 'scheduled' status
     const pendingSessions = await db.select().from(sessions).where(
       and(
         lte(sessions.createdAt, twentyFourHoursAgo),
@@ -28,14 +28,18 @@ export async function checkPendingConfirmations() {
     console.log(`[CONFIRMATION_SERVICE] Found ${pendingSessions.length} sessions pending confirmation.`);
 
     for (const session of pendingSessions) {
+      const isVeryOld = session.createdAt <= fortyEightHoursAgo;
+      
       // Notify Tutor if not confirmed
       if (!session.confirmedByTutor) {
         const [tutor] = await db.select({ pushToken: users.pushToken }).from(users).where(eq(users.id, session.tutorId));
         if (tutor?.pushToken) {
           await sendPushNotification(
             tutor.pushToken,
-            "Confirm Your Session 🎓",
-            "Did you successfully teach your skill? Please confirm to earn your XP!",
+            isVeryOld ? "Final Reminder! ⚠️" : "Confirm Your Session 🎓",
+            isVeryOld 
+              ? "Your teaching session is still pending confirmation. Please verify it now to claim your XP!"
+              : "Did you successfully teach your skill? Confirm now to earn your XP!",
             { sessionId: session.id, screen: "Sessions" }
           );
         }
@@ -47,8 +51,10 @@ export async function checkPendingConfirmations() {
         if (learner?.pushToken) {
           await sendPushNotification(
             learner.pushToken,
-            "Confirm Your Session 🎯",
-            "Did you successfully learn the skill? Please confirm to earn your XP!",
+            isVeryOld ? "Final Reminder! ⚠️" : "Confirm Your Session 🎯",
+            isVeryOld
+              ? "Your learning session is still pending confirmation. Please verify it now!"
+              : "Did you successfully learn the skill? Confirm now to earn your XP!",
             { sessionId: session.id, screen: "Sessions" }
           );
         }

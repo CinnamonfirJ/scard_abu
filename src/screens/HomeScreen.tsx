@@ -139,42 +139,31 @@ export const HomeScreen = ({ navigation }: any) => {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Trending Skills</Text>
-            <TrendingUp color={COLORS.orange} size={20} />
+        {trendingSkills.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Trending Skills</Text>
+              <TrendingUp color={COLORS.orange} size={20} />
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.skillsScroll}
+            >
+              {trendingSkills.map((skill, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.skillChip,
+                    index === 0 && { marginLeft: SPACING.md },
+                  ]}
+                >
+                  <AppBadge label={skill.name} variant='secondary' />
+                </View>
+              ))}
+            </ScrollView>
           </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.skillsScroll}
-          >
-            {loading
-              ? [1, 2, 3, 4].map((i) => (
-                  <Skeleton
-                    key={i}
-                    width={80}
-                    height={30}
-                    borderRadius={15}
-                    style={{
-                      marginRight: SPACING.sm,
-                      marginLeft: i === 1 ? SPACING.md : 0,
-                    }}
-                  />
-                ))
-              : trendingSkills.map((skill, index) => (
-                  <View
-                    key={index}
-                    style={[
-                      styles.skillChip,
-                      index === 0 && { marginLeft: SPACING.md },
-                    ]}
-                  >
-                    <AppBadge label={skill.name} variant='secondary' />
-                  </View>
-                ))}
-          </ScrollView>
-        </View>
+        )}
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>

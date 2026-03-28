@@ -34,6 +34,7 @@ export interface Request {
   senderId: number;
   receiverId: number;
   skillId: number;
+  skillName?: string;
   type: "learn" | "exchange";
   status: "pending" | "accepted" | "rejected";
   message?: string;
@@ -53,6 +54,11 @@ export interface Session {
   confirmedByTutor: boolean;
   confirmedByLearner: boolean;
   createdAt: string;
+  skillName?: string;
+  tutorName?: string;
+  tutorPhone?: string;
+  learnerName?: string;
+  learnerPhone?: string;
 }
 
 interface AppState {

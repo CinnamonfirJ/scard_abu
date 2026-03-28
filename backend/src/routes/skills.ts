@@ -11,20 +11,22 @@ const router = Router();
 router.get("/trending", protect, async (req, res) => {
   try {
     const { count, desc } = await import("drizzle-orm");
+    const { requests } = await import("../db/schema");
+
+    // Count how many requests have been made for each skill
     const trending = await db.select({
       id: skills.id,
       name: skills.name,
-      mentions: count(userSkills.id)
-    }).from(userSkills)
-      .innerJoin(skills, eq(userSkills.skillId, skills.id))
-      .where(eq(userSkills.type, 'learn'))
+      mentions: count(requests.id)
+    }).from(requests)
+      .innerJoin(skills, eq(requests.skillId, skills.id))
       .groupBy(skills.id, skills.name)
-      .orderBy(desc(count(userSkills.id)))
+      .orderBy(desc(count(requests.id)))
       .limit(5);
 
     res.json(trending);
   } catch (error) {
-    console.error(error);
+    console.error("[SKILLS_TRENDING_ERROR]", error);
     res.status(500).json({ error: "Server error fetching trending skills" });
   }
 });

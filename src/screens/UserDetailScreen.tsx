@@ -142,25 +142,28 @@ export const UserDetailScreen = ({ route, navigation }: any) => {
 
           {isConnectionAccepted ? (
             <View style={styles.contactInfo}>
-              <Text style={styles.sectionTitle}>Contact Informaton 📞</Text>
+              <Text style={styles.sectionTitle}>Direct Connection ✅</Text>
               <AppCard variant="outlined" style={styles.contactCard}>
+                <View style={styles.contactHeader}>
+                  <Text style={styles.contactInfoTitle}>You're connected with {user.name}!</Text>
+                </View>
+                <View style={styles.divider} />
                 <View style={styles.contactItem}>
-                  <Phone size={20} color={COLORS.primary} />
+                  <Phone size={18} color={COLORS.primary} />
                   <Text style={styles.contactText}>{user.phone}</Text>
                 </View>
                 <Text style={styles.whatsappNote}>
-                  Feel free to connect externally to schedule your session!
+                  Message {user.name.split(' ')[0]} to schedule your session for one of their skills.
                 </Text>
                 <AppButton
-                  title="Message on WhatsApp"
-                  onPress={() => {
-                    const phone = user.phone.replace(/[^0-9]/g, "");
-                    // Note: In a real app, use Linking.openURL(`whatsapp://send?phone=${phone}`)
-                    console.log(`Opening WhatsApp for ${phone}`);
-                    alert(`In a real app, this would open WhatsApp for ${user.phone}`);
-                  }}
-                  style={[styles.connectButton, { backgroundColor: "#25D366" }]}
-                  icon={<MessageCircle color={COLORS.white} size={20} style={{ marginRight: 8 }} />}
+                   title="Message on WhatsApp"
+                   onPress={() => {
+                     const phone = user.phone.replace(/[^0-9]/g, "");
+                     // In a real app: Linking.openURL(`whatsapp://send?phone=${phone}`)
+                     alert(`Opening WhatsApp for ${user.phone}`);
+                   }}
+                   icon={<MessageCircle color={COLORS.white} size={20} style={{ marginRight: 8 }} />}
+                   style={{ backgroundColor: "#25D366" }}
                 />
               </AppCard>
             </View>
@@ -222,9 +225,12 @@ const styles = StyleSheet.create({
   tagCloud: { flexDirection: "row", flexWrap: "wrap" },
   tag: { marginRight: SPACING.sm, marginBottom: SPACING.sm },
   connectButton: { marginTop: SPACING.md },
-  contactInfo: { marginTop: SPACING.md, gap: 4, alignItems: "center" },
-  contactItem: { flexDirection: "row", alignItems: "center", gap: 6 },
-  contactText: { fontSize: 14, color: COLORS.text },
+  contactInfo: { marginTop: SPACING.md, gap: 4, width: "100%" },
+  contactHeader: { marginBottom: SPACING.xs },
+  contactInfoTitle: { fontSize: 13, color: COLORS.text, fontWeight: "600" },
+  divider: { height: 1, backgroundColor: COLORS.border, marginVertical: SPACING.sm, opacity: 0.5 },
+  contactItem: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: SPACING.sm },
+  contactText: { fontSize: 16, color: COLORS.text, fontWeight: "bold" },
   placeholderAvatar: {
     justifyContent: "center",
     alignItems: "center",
@@ -244,8 +250,9 @@ const styles = StyleSheet.create({
   whatsappNote: {
     fontSize: 12,
     color: COLORS.textLight,
-    marginTop: 8,
+    marginTop: 4,
     textAlign: "center",
     marginBottom: SPACING.md,
+    lineHeight: 18,
   },
 });
